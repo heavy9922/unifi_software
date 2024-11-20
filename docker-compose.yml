@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  unifi:
+    image: ycasti9922/unifi-network-server:8.6.9-java17
+    command: sleep 3600
+    container_name: unifi
+    ports:
+      - "8080:8080"
+      - "8443:8443"
+      - "8843:8843"
+      - "8880:8880"
+      - "3478:3478/udp"
+    volumes:
+      - ./unifi-data:/var/lib/unifi
+      - ./unifi-logs:/var/log/unifi
+    restart: unless-stopped
