@@ -2,16 +2,24 @@ version: '3.8'
 
 services:
   unifi:
-    image: ycasti9922/unifi-network-server:8.6.9-java17
-    command: sleep 3600
+    image: ycasti9922/unifi-network-server:8.6.9-http
     container_name: unifi
-    ports:
-      - "8080:8080"
-      - "8443:8443"
-      - "8843:8843"
-      - "8880:8880"
-      - "3478:3478/udp"
+    network_mode: "host"
+    # ports:
+    #   - "8443:8443"
+    #   - 8080:8080
     volumes:
-      - ./unifi-data:/var/lib/unifi
-      - ./unifi-logs:/var/log/unifi
+      - unifi-data:/var/lib/unifi
+      - unifi-logs:/var/log/unifi
+    # networks:
+    #   vlan30:
+    #     ipv4_address: 172.168.30.8
     restart: unless-stopped
+
+volumes:
+  unifi-data:
+  unifi-logs:
+
+# networks:
+#   vlan30:
+#     external: true

@@ -1,34 +1,28 @@
 # Usar una imagen base ligera
 FROM debian:bullseye-slim
 
-# Configurar variables de entorno
-ENV DEBIAN_FRONTEND=noninteractive
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    systemd systemd-sysv && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
-RUN apt update && apt install -y gnupg wget ca-certificates openjdk-17-jre-headless binutils libcap2 curl logrotate procps  && apt clean && rm -rf /var/lib/apt/lists/* && apt --fix-broken install
+STOPSIGNAL SIGRTMIN+3
 
-RUN java -version
+# ENV container docker
 
-RUN echo '#!/bin/sh\nexit 101' > /usr/sbin/policy-rc.d && chmod +x /usr/sbin/policy-rc.d
+CMD ["/lib/systemd/systemd"]
 
-RUN wget -O /tmp/unifi.deb https://dl.ui.com/unifi/8.6.9/unifi_sysvinit_all.deb
+# Establecer el directorio de trabajo dentro del contenedor
+WORKDIR /home
 
-RUN wget -qO - https://www.mongodb.org/static/pgp/server-4.4.asc | apt-key add - && echo "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/debian buster/mongodb-org/4.4 main" > /etc/apt/sources.list.d/mongodb-org-4.4.list
+# Copiar el script al contenedor
+COPY install_unifi.sh /home/
 
-RUN apt update && apt install -y mongodb-org && apt clean && rm -rf /var/lib/apt/lists/*
+# Dar permisos de ejecución al script
+RUN chmod +x /home/install_unifi.sh
 
-# Crear el archivo system.properties con configuraciones predeterminadas
-RUN mkdir -p /usr/lib/unifi/data && \
-    echo "unifi.db.name=ace" > /usr/lib/unifi/data/system.properties && \
-    echo "unifi.db.host=localhost" >> /usr/lib/unifi/data/system.properties && \
-    echo "unifi.db.port=27117" >> /usr/lib/unifi/data/system.properties
+# # # Comando predeterminado
+# RUN ./install_unifi.sh
 
-RUN dpkg -i /tmp/unifi.deb || apt -f install -y && apt-get clean && rm -rf /var/lib/apt/lists/*
-
-# Crear volúmenes para persistencia de datos y logs
-VOLUME ["/var/lib/unifi", "/var/log/unifi", "/var/run/unifi"]
-
-# Exponer los puertos necesarios para UniFi
-EXPOSE 8080 8443 8843 8880 3478/udp
-
-# Configurar el punto de entrada para iniciar el servicio UniFi
-ENTRYPOINT ["/usr/lib/jvm/java-17-openjdk-amd64/bin/java", "-Xmx1024M", "-jar", "/usr/lib/unifi/lib/ace.jar", "start"]
+# ENTRYPOINT ["service", "unifi", "start"]
